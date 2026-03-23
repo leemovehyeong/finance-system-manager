@@ -2,6 +2,32 @@
 
 ---
 
+## 2026-03-23 — Phase 3 완료
+
+### 추가
+
+**공유 컴포넌트**
+- `components/common/ChecklistView.tsx` — 체크리스트 (진행률 바 + 아이템, 영업/설치 재사용)
+- `components/common/DocumentUpload.tsx` — 서류 업로드/목록/삭제
+
+**관리자 영업/설치 관리**
+- `/admin/sales` — 영업 프로젝트 목록 (상태 필터)
+- `/admin/sales/new` — 새 영업 프로젝트 생성 (거래처 검색 연동)
+- `/admin/sales/[id]` — 프로젝트 상세 (4탭: 정보/영업체크리스트/설치체크리스트/서류)
+  - 상태 변경, 설치 담당자 배정, 일정 설정
+  - 영업 체크리스트 (SALES_CHECKLIST_TEMPLATE)
+  - 설치 체크리스트 (INSTALL_CHECKLIST_TEMPLATE)
+  - 서류 업로드 (sales-documents 버킷)
+  - 사진 업로드 (install-photos 버킷)
+
+**현장직 설치 화면**
+- `/field/sales/[id]` — 설치 체크리스트 진행 + 사진 업로드 + 완료 처리
+
+**D-1 리마인더**
+- `/api/reminders` — 설치 D-1 리마인더 API (Vercel Cron 연동 가능)
+
+---
+
 ## 2026-03-23 — Phase 2 완료
 
 ### 추가
