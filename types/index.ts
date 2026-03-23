@@ -28,7 +28,7 @@ export interface Employee {
   name: string;
   email: string;
   phone: string | null;
-  role: Role;
+  role: Role | null;
   profile_image: string | null;
   is_active: boolean;
   created_at: string;
