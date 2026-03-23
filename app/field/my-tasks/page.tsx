@@ -20,25 +20,35 @@ export default function FieldMyTasks() {
   const supabase = createClient();
 
   useEffect(() => {
-    if (employee) fetchMyTasks();
+    if (employee) {
+      fetchMyTasks();
+    } else {
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [employee, tab]);
 
   const fetchMyTasks = async () => {
     if (!employee) return;
     setLoading(true);
 
-    const statuses = tab === 'active' ? ['accepted', 'in_progress'] : ['completed'];
+    try {
+      const statuses = tab === 'active' ? ['accepted', 'in_progress'] : ['completed'];
 
-    const { data } = await supabase
-      .from('tickets')
-      .select('*')
-      .eq('assigned_to', employee.id)
-      .in('status', statuses)
-      .order('updated_at', { ascending: false })
-      .limit(50);
+      const { data } = await supabase
+        .from('tickets')
+        .select('*')
+        .eq('assigned_to', employee.id)
+        .in('status', statuses)
+        .order('updated_at', { ascending: false })
+        .limit(50);
 
-    setTickets(data || []);
-    setLoading(false);
+      setTickets(data || []);
+    } catch (err) {
+      console.error('My tasks fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const tabs: { key: TabKey; label: string }[] = [

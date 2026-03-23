@@ -24,20 +24,24 @@ export default function AdminPaperPage() {
   }, []);
 
   const fetchData = async () => {
-    const { data: stockData } = await supabase
-      .from('paper_stock')
-      .select('*')
-      .order('type');
-    setStocks(stockData || []);
+    try {
+      const { data: stockData } = await supabase
+        .from('paper_stock')
+        .select('*')
+        .order('type');
+      setStocks(stockData || []);
 
-    const { data: txData } = await supabase
-      .from('paper_transactions')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(20);
-    setTransactions(txData || []);
-
-    setLoading(false);
+      const { data: txData } = await supabase
+        .from('paper_transactions')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      setTransactions(txData || []);
+    } catch (err) {
+      console.error('Paper data fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const subscribeToStock = () => {

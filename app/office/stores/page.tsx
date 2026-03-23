@@ -21,18 +21,23 @@ export default function OfficeStoresPage() {
   }, [search]);
 
   const fetchStores = async () => {
-    let query = supabase
-      .from('stores')
-      .select('*')
-      .order('name');
+    try {
+      let query = supabase
+        .from('stores')
+        .select('*')
+        .order('name');
 
-    if (search.trim()) {
-      query = query.ilike('name', `%${search.trim()}%`);
+      if (search.trim()) {
+        query = query.ilike('name', `%${search.trim()}%`);
+      }
+
+      const { data } = await query.limit(50);
+      setStores(data || []);
+    } catch (err) {
+      console.error('Stores fetch error:', err);
+    } finally {
+      setLoading(false);
     }
-
-    const { data } = await query.limit(50);
-    setStores(data || []);
-    setLoading(false);
   };
 
   return (

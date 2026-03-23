@@ -20,32 +20,34 @@ export default function AdminStatsPage() {
   }, []);
 
   const fetchStats = async () => {
-    // 상태별
-    const sCounts: Record<string, number> = {};
-    let total = 0;
-    for (const key of Object.keys(TICKET_STATUS)) {
-      const { count } = await supabase
-        .from('tickets')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', key);
-      sCounts[key] = count || 0;
-      total += count || 0;
-    }
-    setStatusCounts(sCounts);
-    setTotalCount(total);
+    try {
+      const sCounts: Record<string, number> = {};
+      let total = 0;
+      for (const key of Object.keys(TICKET_STATUS)) {
+        const { count } = await supabase
+          .from('tickets')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', key);
+        sCounts[key] = count || 0;
+        total += count || 0;
+      }
+      setStatusCounts(sCounts);
+      setTotalCount(total);
 
-    // 유형별
-    const tCounts: Record<string, number> = {};
-    for (const key of Object.keys(TICKET_TYPES)) {
-      const { count } = await supabase
-        .from('tickets')
-        .select('*', { count: 'exact', head: true })
-        .eq('type', key);
-      tCounts[key] = count || 0;
+      const tCounts: Record<string, number> = {};
+      for (const key of Object.keys(TICKET_TYPES)) {
+        const { count } = await supabase
+          .from('tickets')
+          .select('*', { count: 'exact', head: true })
+          .eq('type', key);
+        tCounts[key] = count || 0;
+      }
+      setTypeCounts(tCounts);
+    } catch (err) {
+      console.error('Stats fetch error:', err);
+    } finally {
+      setLoading(false);
     }
-    setTypeCounts(tCounts);
-
-    setLoading(false);
   };
 
   if (loading) {

@@ -27,18 +27,23 @@ export default function AdminSalesPage() {
 
   const fetchProjects = async () => {
     setLoading(true);
-    let query = supabase
-      .from('sales_projects')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      let query = supabase
+        .from('sales_projects')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (filter !== 'all') {
-      query = query.eq('sales_status', filter);
+      if (filter !== 'all') {
+        query = query.eq('sales_status', filter);
+      }
+
+      const { data } = await query.limit(50);
+      setProjects(data || []);
+    } catch (err) {
+      console.error('Sales fetch error:', err);
+    } finally {
+      setLoading(false);
     }
-
-    const { data } = await query.limit(50);
-    setProjects(data || []);
-    setLoading(false);
   };
 
   const filters = [

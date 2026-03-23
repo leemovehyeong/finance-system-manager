@@ -31,22 +31,31 @@ export default function SalesDetailPage({ params }: { params: { id: string } }) 
   }, [params.id]);
 
   const fetchProject = async () => {
-    const { data } = await supabase
-      .from('sales_projects')
-      .select('*')
-      .eq('id', params.id)
-      .single();
-    setProject(data);
-    setLoading(false);
+    try {
+      const { data } = await supabase
+        .from('sales_projects')
+        .select('*')
+        .eq('id', params.id)
+        .single();
+      setProject(data);
+    } catch (err) {
+      console.error('Project fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchFieldEmployees = async () => {
-    const { data } = await supabase
-      .from('employees')
-      .select('*')
-      .in('role', ['field', 'admin'])
-      .eq('is_active', true);
-    setFieldEmployees(data || []);
+    try {
+      const { data } = await supabase
+        .from('employees')
+        .select('*')
+        .in('role', ['field', 'admin'])
+        .eq('is_active', true);
+      setFieldEmployees(data || []);
+    } catch (err) {
+      console.error('Field employees fetch error:', err);
+    }
   };
 
   const updateProject = async (updates: Partial<SalesProject>) => {

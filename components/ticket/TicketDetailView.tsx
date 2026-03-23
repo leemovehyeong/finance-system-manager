@@ -39,28 +39,37 @@ export default function TicketDetailView({ ticketId, basePath }: TicketDetailVie
   }, [ticketId]);
 
   const fetchTicket = async () => {
-    const { data } = await supabase
-      .from('tickets')
-      .select(`
-        *,
-        created_by_employee:employees!tickets_created_by_fkey(id, name, phone),
-        assigned_to_employee:employees!tickets_assigned_to_fkey(id, name, phone)
-      `)
-      .eq('id', ticketId)
-      .single();
+    try {
+      const { data } = await supabase
+        .from('tickets')
+        .select(`
+          *,
+          created_by_employee:employees!tickets_created_by_fkey(id, name, phone),
+          assigned_to_employee:employees!tickets_assigned_to_fkey(id, name, phone)
+        `)
+        .eq('id', ticketId)
+        .single();
 
-    setTicket(data);
-    setLoading(false);
+      setTicket(data);
+    } catch (err) {
+      console.error('Ticket fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchComments = async () => {
-    const { data } = await supabase
-      .from('ticket_comments')
-      .select('*, employee:employees(id, name, profile_image)')
-      .eq('ticket_id', ticketId)
-      .order('created_at', { ascending: true });
+    try {
+      const { data } = await supabase
+        .from('ticket_comments')
+        .select('*, employee:employees(id, name, profile_image)')
+        .eq('ticket_id', ticketId)
+        .order('created_at', { ascending: true });
 
-    setComments(data || []);
+      setComments(data || []);
+    } catch (err) {
+      console.error('Comments fetch error:', err);
+    }
   };
 
   const subscribeToChanges = () => {

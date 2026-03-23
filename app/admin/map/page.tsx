@@ -19,14 +19,19 @@ export default function AdminMapPage() {
   }, []);
 
   const fetchTickets = async () => {
-    const { data } = await supabase
-      .from('tickets')
-      .select('*, store:stores(latitude, longitude), assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
-      .in('status', ['pending', 'accepted', 'in_progress'])
-      .order('created_at', { ascending: false });
+    try {
+      const { data } = await supabase
+        .from('tickets')
+        .select('*, store:stores(latitude, longitude), assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
+        .in('status', ['pending', 'accepted', 'in_progress'])
+        .order('created_at', { ascending: false });
 
-    setTickets(data || []);
-    setLoading(false);
+      setTickets(data || []);
+    } catch (err) {
+      console.error('Map tickets fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {

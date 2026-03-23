@@ -19,35 +19,43 @@ export default function FieldMapPage() {
   const supabase = createClient();
 
   useEffect(() => {
-    if (employee) fetchTickets();
+    if (employee) {
+      fetchTickets();
+    } else {
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [employee]);
 
   const fetchTickets = async () => {
     if (!employee) return;
 
-    // 오늘의 활성 티켓 (store 정보 포함)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    const { data: all } = await supabase
-      .from('tickets')
-      .select('*, store:stores(latitude, longitude)')
-      .in('status', ['pending', 'accepted', 'in_progress'])
-      .gte('created_at', today.toISOString())
-      .order('created_at', { ascending: false });
+      const { data: all } = await supabase
+        .from('tickets')
+        .select('*, store:stores(latitude, longitude)')
+        .in('status', ['pending', 'accepted', 'in_progress'])
+        .gte('created_at', today.toISOString())
+        .order('created_at', { ascending: false });
 
-    setAllTickets(all || []);
+      setAllTickets(all || []);
 
-    // 내가 수락한 업무
-    const { data: mine } = await supabase
-      .from('tickets')
-      .select('*, store:stores(latitude, longitude)')
-      .eq('assigned_to', employee.id)
-      .in('status', ['accepted', 'in_progress'])
-      .order('accepted_at', { ascending: false });
+      const { data: mine } = await supabase
+        .from('tickets')
+        .select('*, store:stores(latitude, longitude)')
+        .eq('assigned_to', employee.id)
+        .in('status', ['accepted', 'in_progress'])
+        .order('accepted_at', { ascending: false });
 
-    setMyTickets(mine || []);
-    setLoading(false);
+      setMyTickets(mine || []);
+    } catch (err) {
+      console.error('Map tickets fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {

@@ -30,24 +30,26 @@ export default function AdminEmployeesPage() {
   }, []);
 
   const fetchData = async () => {
-    // 승인된 직원 (role이 있는)
-    const { data: empData } = await supabase
-      .from('employees')
-      .select('*')
-      .not('role', 'is', null)
-      .order('role')
-      .order('name');
-    setEmployees(empData || []);
+    try {
+      const { data: empData } = await supabase
+        .from('employees')
+        .select('*')
+        .not('role', 'is', null)
+        .order('role')
+        .order('name');
+      setEmployees(empData || []);
 
-    // 대기 사용자 (role이 null인)
-    const { data: pendingData } = await supabase
-      .from('employees')
-      .select('*')
-      .is('role', null)
-      .order('created_at', { ascending: false });
-    setPendingEmployees(pendingData || []);
-
-    setLoading(false);
+      const { data: pendingData } = await supabase
+        .from('employees')
+        .select('*')
+        .is('role', null)
+        .order('created_at', { ascending: false });
+      setPendingEmployees(pendingData || []);
+    } catch (err) {
+      console.error('Employees fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleApprove = async (emp: Employee) => {

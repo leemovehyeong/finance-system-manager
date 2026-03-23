@@ -27,22 +27,27 @@ export default function AdminStoresPage() {
   }, [search, regionFilter]);
 
   const fetchStores = async () => {
-    let query = supabase
-      .from('stores')
-      .select('*')
-      .order('name');
+    try {
+      let query = supabase
+        .from('stores')
+        .select('*')
+        .order('name');
 
-    if (search.trim()) {
-      query = query.ilike('name', `%${search.trim()}%`);
+      if (search.trim()) {
+        query = query.ilike('name', `%${search.trim()}%`);
+      }
+
+      if (regionFilter !== 'all') {
+        query = query.eq('region', regionFilter);
+      }
+
+      const { data } = await query.limit(100);
+      setStores(data || []);
+    } catch (err) {
+      console.error('Stores fetch error:', err);
+    } finally {
+      setLoading(false);
     }
-
-    if (regionFilter !== 'all') {
-      query = query.eq('region', regionFilter);
-    }
-
-    const { data } = await query.limit(100);
-    setStores(data || []);
-    setLoading(false);
   };
 
   const filters = [

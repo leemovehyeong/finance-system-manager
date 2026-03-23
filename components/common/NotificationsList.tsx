@@ -23,31 +23,41 @@ export default function NotificationsList({ basePath }: NotificationsListProps) 
   const supabase = createClient();
 
   useEffect(() => {
-    if (employee) fetchNotifications();
+    if (employee) {
+      fetchNotifications();
+    } else {
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [employee]);
 
   const fetchNotifications = async () => {
     if (!employee) return;
 
-    const { data } = await supabase
-      .from('notifications')
-      .select('*')
-      .or(`target.eq.all,target.eq.${employee.role},target.eq.${employee.id}`)
-      .order('created_at', { ascending: false })
-      .limit(50);
+    try {
+      const { data } = await supabase
+        .from('notifications')
+        .select('*')
+        .or(`target.eq.all,target.eq.${employee.role},target.eq.${employee.id}`)
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-    setNotifications(data || []);
-    setLoading(false);
+      setNotifications(data || []);
 
-    // 읽음 처리
-    if (data && data.length > 0) {
-      const unreadIds = data.filter((n: { is_read: boolean }) => !n.is_read).map((n: { id: string }) => n.id);
-      if (unreadIds.length > 0) {
-        await supabase
-          .from('notifications')
-          .update({ is_read: true })
-          .in('id', unreadIds);
+      // 읽음 처리
+      if (data && data.length > 0) {
+        const unreadIds = data.filter((n: { is_read: boolean }) => !n.is_read).map((n: { id: string }) => n.id);
+        if (unreadIds.length > 0) {
+          await supabase
+            .from('notifications')
+            .update({ is_read: true })
+            .in('id', unreadIds);
+        }
       }
+    } catch (err) {
+      console.error('Notifications fetch error:', err);
+    } finally {
+      setLoading(false);
     }
   };
 

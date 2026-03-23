@@ -26,18 +26,23 @@ function OfficeTicketsContent() {
 
   const fetchTickets = async () => {
     setLoading(true);
-    let query = supabase
-      .from('tickets')
-      .select('*, assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
-      .order('created_at', { ascending: false });
+    try {
+      let query = supabase
+        .from('tickets')
+        .select('*, assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
+        .order('created_at', { ascending: false });
 
-    if (filter !== 'all') {
-      query = query.eq('status', filter);
+      if (filter !== 'all') {
+        query = query.eq('status', filter);
+      }
+
+      const { data } = await query.limit(50);
+      setTickets(data || []);
+    } catch (err) {
+      console.error('Office tickets fetch error:', err);
+    } finally {
+      setLoading(false);
     }
-
-    const { data } = await query.limit(50);
-    setTickets(data || []);
-    setLoading(false);
   };
 
   const filters = [

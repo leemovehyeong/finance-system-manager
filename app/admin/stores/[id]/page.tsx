@@ -34,26 +34,35 @@ export default function StoreDetailPage({ params }: { params: { id: string } }) 
   }, [params.id]);
 
   const fetchStore = async () => {
-    const { data } = await supabase
-      .from('stores')
-      .select('*')
-      .eq('id', params.id)
-      .single();
+    try {
+      const { data } = await supabase
+        .from('stores')
+        .select('*')
+        .eq('id', params.id)
+        .single();
 
-    setStore(data);
-    setEditForm(data || {});
-    setLoading(false);
+      setStore(data);
+      setEditForm(data || {});
+    } catch (err) {
+      console.error('Store fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchTickets = async () => {
-    const { data } = await supabase
-      .from('tickets')
-      .select('*, assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
-      .eq('store_id', params.id)
-      .order('created_at', { ascending: false })
-      .limit(20);
+    try {
+      const { data } = await supabase
+        .from('tickets')
+        .select('*, assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
+        .eq('store_id', params.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
 
-    setTickets(data || []);
+      setTickets(data || []);
+    } catch (err) {
+      console.error('Store tickets fetch error:', err);
+    }
   };
 
   const handleAddressConvert = async () => {
