@@ -23,27 +23,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
     let cancelled = false;
 
-    // 5초 타임아웃 — 세션 복원 실패 시에도 앱이 동작하도록
     const timeout = setTimeout(() => {
-      if (!cancelled && loading) {
+      if (!cancelled) {
         console.warn('Auth session timeout');
+        setAuthReady(true);
         setLoading(false);
       }
     }, 5000);
 
     const getSession = async () => {
       try {
-        // getSession()은 로컬 캐시에서 읽기 때문에 빠름
         const { data: { session } } = await supabase.auth.getSession();
         if (cancelled) return;
 
         const currentUser = session?.user ?? null;
         setUser(currentUser);
+
+        // 세션 복원 완료 → children 렌더링 허용
+        // 이 시점에서 Supabase 클라이언트에 JWT가 설정됨
+        setAuthReady(true);
 
         if (currentUser) {
           const { data } = await supabase
@@ -55,6 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (err) {
         console.error('Auth session error:', err);
+        setAuthReady(true);
       } finally {
         if (!cancelled) {
           clearTimeout(timeout);
@@ -96,6 +101,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setEmployee(null);
   };
+
+  // 세션 복원 완료 전에는 children을 렌더링하지 않음
+  // → 페이지 컴포넌트의 useEffect가 인증된 상태에서만 실행됨
+  if (!authReady) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={{ user, employee, loading, signOut }}>
