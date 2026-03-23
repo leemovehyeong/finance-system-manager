@@ -135,13 +135,13 @@ export default function NewTicketPage() {
               </div>
               <div>
                 <p className="text-body font-semibold text-text-primary">스마트 붙여넣기</p>
-                <p className="text-micro text-text-tertiary">밴드/메신저 내용을 붙여넣으면 자동 입력</p>
+                <p className="text-micro text-text-tertiary">복사한 내용을 붙여넣으면 빠르게 입력해 드려요</p>
               </div>
             </div>
             <textarea
               value={pasteText}
               onChange={(e) => setPasteText(e.target.value)}
-              placeholder={"밴드에서 복사한 내용을 여기에 붙여넣기\n\n예시:\n엔젤\n전남 여수시 여문1로 46-1\n010-9659-6938\n.\n단말기가 안된다고 하세요"}
+              placeholder={"접수 내용을 여기에 붙여넣기\n\n예시:\n소유\n전남 여수시 웅천3길 12-14\n010-6732-3575\nPOS\n.\n데몬 관련 창이 계속 뜨고 빠른방문 요청"}
               className="w-full min-h-[120px] px-3 py-2.5 bg-surface-secondary rounded-xl text-caption text-text-primary placeholder:text-text-tertiary resize-none focus:outline-none"
             />
             {pasteText.trim() && (

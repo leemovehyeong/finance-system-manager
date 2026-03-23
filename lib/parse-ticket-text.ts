@@ -100,16 +100,9 @@ export function parseTicketText(text: string): ParsedTicket {
   // 5차: 거래처명 = 주소/전화/장비/구분자가 아닌 첫 번째 줄
   for (let i = 0; i < lines.length; i++) {
     if (usedIndices.has(i)) continue;
-    // 첫 번째 미사용 줄이 짧으면 거래처명
-    if (lines[i].length <= 20 && !foundSeparator) {
-      result.store_name = lines[i];
-      usedIndices.add(i);
-      break;
-    } else if (!foundSeparator) {
-      result.store_name = lines[i];
-      usedIndices.add(i);
-      break;
-    }
+    result.store_name = lines[i];
+    usedIndices.add(i);
+    break;
   }
 
   // 6차: 남은 줄들 → 구분자 이전이면 거래처명 보완, 이후면 증상
@@ -124,10 +117,12 @@ export function parseTicketText(text: string): ParsedTicket {
 
   result.description = descLines.join('\n');
 
-  // 제목 자동 생성: 증상 첫 줄에서 30자 이내
-  if (descLines.length > 0) {
+  // 제목 자동 생성: 장비명 기반 또는 증상 요약
+  if (result.equipment) {
+    result.title = `${result.equipment} 점검 요청`;
+  } else if (descLines.length > 0) {
     const firstLine = descLines[0];
-    result.title = firstLine.length > 30 ? firstLine.slice(0, 30) + '...' : firstLine;
+    result.title = firstLine.length > 20 ? firstLine.slice(0, 20) + '...' : firstLine;
   }
 
   return result;
