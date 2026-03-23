@@ -94,6 +94,21 @@ export default function TicketDetailView({ ticketId, basePath }: TicketDetailVie
 
     await supabase.from('tickets').update(updates).eq('id', ticketId);
 
+    // 용지 티켓 완료 시 자동 차감
+    if (newStatus === 'completed' && ticket.type === 'paper' && ticket.paper_type && ticket.paper_quantity) {
+      await fetch('/api/paper-deduct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticket_id: ticketId,
+          paper_type: ticket.paper_type,
+          quantity: ticket.paper_quantity,
+          employee_id: employee.id,
+          store_name: ticket.store_name,
+        }),
+      });
+    }
+
     // 시스템 댓글
     const statusLabel = TICKET_STATUS[newStatus].label;
     await supabase.from('ticket_comments').insert({

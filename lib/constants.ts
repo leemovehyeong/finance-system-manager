@@ -33,9 +33,9 @@ export const SALES_STATUS = {
 } as const;
 
 export const PAPER_TYPES = {
-  pos: { label: 'POS 용지', unit: '봉지', boxUnit: 20, lowThreshold: 40 },
-  thermal: { label: '감열지', unit: '개', boxUnit: 10, lowThreshold: 15 },
-  portable: { label: '휴대용', unit: '개', boxUnit: 5, lowThreshold: 10 },
+  pos: { label: '포스(3인치)', unit: '봉지', boxUnit: 25, lowThreshold: 50 },
+  thermal: { label: '천용지(2인치)', unit: '봉지', boxUnit: 25, lowThreshold: 50 },
+  portable: { label: '휴대용 용지', unit: '봉지', boxUnit: 5, lowThreshold: 10 },
 } as const;
 
 export const ROLES = {

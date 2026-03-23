@@ -2,6 +2,28 @@
 
 ---
 
+## 2026-03-23 — Phase 5 완료
+
+### 추가
+
+**용지 재고 관리**
+- `/admin/paper` — 재고 현황 (박스/낱개 표시, 프로그레스 바, 최근 이력)
+- `/admin/paper/deliver` — 용지 지급 (재고 차감 + 부족 알림 자동)
+- `/admin/paper/stock-in` — 용지 입고 (박스+낱개 입력, 미리보기)
+
+**자동 차감**
+- `/api/paper-deduct` — 용지 티켓 완료 시 자동 차감 API
+- `TicketDetailView` — 용지 티켓(type=paper) 완료 시 /api/paper-deduct 호출
+
+**부족 알림**
+- 지급/자동차감 후 재고가 low_threshold 이하면 전체 알림 생성
+
+### 변경
+- `lib/constants.ts` — PAPER_TYPES 실제 값 반영 (포스 25봉/박스, 천용지 25봉/박스, 휴대용 5봉/박스)
+- DB paper_stock 초기값 업데이트 (329/244/39)
+
+---
+
 ## 2026-03-23 — Phase 4 완료
 
 ### 추가
