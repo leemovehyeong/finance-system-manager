@@ -8,7 +8,7 @@ function isPublicPath(pathname: string) {
 }
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: request.headers,
     },
@@ -24,20 +24,10 @@ export async function middleware(request: NextRequest) {
         },
         set(name: string, value: string, options: Record<string, unknown>) {
           request.cookies.set({ name, value });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
           response.cookies.set({ name, value, ...options });
         },
         remove(name: string, options: Record<string, unknown>) {
           request.cookies.set({ name, value: '' });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
           response.cookies.set({ name, value: '', ...options });
         },
       },
