@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { APP_NAME, TICKET_STATUS, PAPER_TYPES } from '@/lib/constants';
 import Card from '@/components/ui/Card';
@@ -11,17 +10,9 @@ import { DashboardSkeleton } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
 import type { Ticket, TicketStatus, Employee, PaperStock } from '@/types';
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
-  ]);
-}
-
 export default function AdminDashboard() {
   const router = useRouter();
   const { signOut } = useAuth();
-  const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<Record<string, number>>({});
@@ -31,6 +22,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSignOut = async () => {
@@ -40,108 +32,16 @@ export default function AdminDashboard() {
 
   const fetchAll = async () => {
     try {
-      // 1) 먼저 인증 상태 확인
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      console.log('[Dashboard] auth check:', { userId: user?.id, authError: authError?.message });
-
-      if (!user) {
-        setError('인증 세션이 없습니다. 다시 로그인해주세요.');
-        setLoading(false);
-        return;
+      const res = await fetch('/api/dashboard?role=admin');
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `서버 오류 (${res.status})`);
       }
-
-      // 2) 가장 간단한 쿼리부터 시도 (진단용)
-      console.log('[Dashboard] starting queries...');
-
-      const t1 = Date.now();
-      const testQuery = await supabase.from('employees').select('id').limit(1);
-      console.log('[Dashboard] test query:', {
-        ms: Date.now() - t1,
-        data: testQuery.data,
-        error: testQuery.error?.message,
-      });
-
-      if (testQuery.error) {
-        setError(`DB 연결 오류: ${testQuery.error.message}`);
-        setLoading(false);
-        return;
-      }
-
-      // 3) 실제 데이터 로드 (개별 에러 추적)
-      const results = await Promise.allSettled([
-        supabase.from('tickets').select('status').then(r => {
-          console.log('[Dashboard] tickets/status:', { data: r.data?.length, error: r.error?.message });
-          return r;
-        }),
-        supabase.from('tickets')
-          .select('*, assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
-          .order('created_at', { ascending: false })
-          .limit(5)
-          .then(r => {
-            console.log('[Dashboard] recent tickets:', { data: r.data?.length, error: r.error?.message });
-            return r;
-          }),
-        supabase.from('employees')
-          .select('*')
-          .in('role', ['field', 'admin'])
-          .eq('is_active', true)
-          .then(r => {
-            console.log('[Dashboard] employees:', { data: r.data?.length, error: r.error?.message });
-            return r;
-          }),
-        supabase.from('paper_stock').select('*').then(r => {
-          console.log('[Dashboard] paper_stock:', { data: r.data?.length, error: r.error?.message });
-          return r;
-        }),
-      ]);
-
-      const [statsResult, ticketsResult, employeesResult, stockResult] = results;
-
-      // 상태별 카운트 집계
-      if (statsResult.status === 'fulfilled' && statsResult.value.data) {
-        const counts: Record<string, number> = {};
-        for (const key of Object.keys(TICKET_STATUS)) {
-          counts[key] = 0;
-        }
-        for (const ticket of statsResult.value.data) {
-          if (ticket.status in counts) {
-            counts[ticket.status]++;
-          }
-        }
-        setStats(counts);
-      }
-
-      // 최근 티켓
-      if (ticketsResult.status === 'fulfilled') {
-        setRecentTickets(ticketsResult.value.data || []);
-      }
-
-      // 직원 + 진행 중 건수
-      if (employeesResult.status === 'fulfilled' && employeesResult.value.data) {
-        const employees = employeesResult.value.data;
-        const { data: activeTickets } = await supabase
-          .from('tickets')
-          .select('assigned_to')
-          .in('status', ['accepted', 'in_progress']);
-
-        const countMap: Record<string, number> = {};
-        if (activeTickets) {
-          for (const t of activeTickets) {
-            if (t.assigned_to) {
-              countMap[t.assigned_to] = (countMap[t.assigned_to] || 0) + 1;
-            }
-          }
-        }
-        setFieldEmployees(employees.map((emp) => ({
-          ...emp,
-          activeCount: countMap[emp.id] || 0,
-        })));
-      }
-
-      // 용지 재고
-      if (stockResult.status === 'fulfilled') {
-        setPaperStock(stockResult.value.data || []);
-      }
+      const data = await res.json();
+      setStats(data.stats || {});
+      setRecentTickets(data.recentTickets || []);
+      setFieldEmployees(data.fieldEmployees || []);
+      setPaperStock(data.paperStock || []);
     } catch (err) {
       console.error('Dashboard fetch error:', err);
       setError(err instanceof Error ? err.message : '데이터를 불러오지 못했습니다');

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { APP_NAME, TICKET_STATUS } from '@/lib/constants';
 import Card from '@/components/ui/Card';
@@ -12,13 +11,6 @@ import { DashboardSkeleton } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
 import type { Ticket, TicketStatus } from '@/types';
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
-  ]);
-}
-
 export default function OfficeDashboard() {
   const { employee, signOut } = useAuth();
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -26,10 +18,10 @@ export default function OfficeDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const supabase = createClient();
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSignOut = async () => {
@@ -39,34 +31,14 @@ export default function OfficeDashboard() {
 
   const fetchData = async () => {
     try {
-      const [ticketsResult, statsResult] = await withTimeout(
-        Promise.allSettled([
-          supabase
-            .from('tickets')
-            .select('*, assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
-            .order('created_at', { ascending: false })
-            .limit(10),
-          supabase.from('tickets').select('status'),
-        ]),
-        8000
-      );
-
-      if (ticketsResult.status === 'fulfilled') {
-        setTickets(ticketsResult.value.data || []);
+      const res = await fetch('/api/dashboard?role=office');
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `서버 오류 (${res.status})`);
       }
-
-      if (statsResult.status === 'fulfilled' && statsResult.value.data) {
-        const counts: Record<string, number> = {};
-        for (const key of Object.keys(TICKET_STATUS)) {
-          counts[key] = 0;
-        }
-        for (const ticket of statsResult.value.data) {
-          if (ticket.status in counts) {
-            counts[ticket.status]++;
-          }
-        }
-        setStats(counts);
-      }
+      const data = await res.json();
+      setTickets(data.tickets || []);
+      setStats(data.stats || {});
     } catch (err) {
       console.error('Office dashboard fetch error:', err);
       setError(err instanceof Error ? err.message : '데이터를 불러오지 못했습니다');
