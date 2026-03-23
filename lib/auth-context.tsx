@@ -26,10 +26,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const supabase = createClient();
+    let cancelled = false;
+
+    // 5초 타임아웃 — 세션 복원 실패 시에도 앱이 동작하도록
+    const timeout = setTimeout(() => {
+      if (!cancelled && loading) {
+        console.warn('Auth session timeout');
+        setLoading(false);
+      }
+    }, 5000);
 
     const getSession = async () => {
       try {
+        // getSession()은 로컬 캐시에서 읽기 때문에 빠름
         const { data: { session } } = await supabase.auth.getSession();
+        if (cancelled) return;
+
         const currentUser = session?.user ?? null;
         setUser(currentUser);
 
@@ -39,19 +51,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .select('*')
             .eq('auth_id', currentUser.id)
             .single();
-          setEmployee(data);
+          if (!cancelled) setEmployee(data);
         }
       } catch (err) {
         console.error('Auth session error:', err);
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          clearTimeout(timeout);
+          setLoading(false);
+        }
       }
     };
 
     getSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (_event: string, session: { user: User | null } | null) => {
+        if (cancelled) return;
         setUser(session?.user ?? null);
 
         if (session?.user) {
@@ -60,14 +76,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .select('*')
             .eq('auth_id', session.user.id)
             .single();
-          setEmployee(data);
+          if (!cancelled) setEmployee(data);
         } else {
           setEmployee(null);
         }
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {

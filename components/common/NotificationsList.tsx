@@ -41,7 +41,7 @@ export default function NotificationsList({ basePath }: NotificationsListProps) 
 
     // 읽음 처리
     if (data && data.length > 0) {
-      const unreadIds = data.filter((n) => !n.is_read).map((n) => n.id);
+      const unreadIds = data.filter((n: { is_read: boolean }) => !n.is_read).map((n: { id: string }) => n.id);
       if (unreadIds.length > 0) {
         await supabase
           .from('notifications')
