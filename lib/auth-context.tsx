@@ -23,23 +23,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
 
   useEffect(() => {
+    const supabase = createClient();
+
     const getSession = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
 
-      if (user) {
-        const { data } = await supabase
-          .from('employees')
-          .select('*')
-          .eq('auth_id', user.id)
-          .single();
-        setEmployee(data);
+        if (currentUser) {
+          const { data } = await supabase
+            .from('employees')
+            .select('*')
+            .eq('auth_id', currentUser.id)
+            .single();
+          setEmployee(data);
+        }
+      } catch (err) {
+        console.error('Auth session error:', err);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     getSession();
@@ -65,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = async () => {
+    const supabase = createClient();
     await supabase.auth.signOut();
     setUser(null);
     setEmployee(null);

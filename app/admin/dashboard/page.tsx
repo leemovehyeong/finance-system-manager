@@ -68,7 +68,7 @@ export default function AdminDashboard() {
           if (t.assigned_to) countMap[t.assigned_to] = (countMap[t.assigned_to] || 0) + 1;
         }
       }
-      setFieldEmployees((employeesRes.data || []).map((emp) => ({
+      setFieldEmployees((employeesRes.data || []).map((emp: Employee) => ({
         ...emp,
         activeCount: countMap[emp.id] || 0,
       })));
