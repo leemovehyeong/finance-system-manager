@@ -15,6 +15,7 @@ import PhoneLink from '@/components/common/PhoneLink';
 import { DashboardSkeleton } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
 import { formatDate } from '@/lib/utils';
+import QRGenerator from '@/components/common/QRGenerator';
 import type { Store, Ticket, Region } from '@/types';
 
 export default function StoreDetailPage({ params }: { params: { id: string } }) {
@@ -303,6 +304,15 @@ export default function StoreDetailPage({ params }: { params: { id: string } }) 
                 </div>
               )}
             </Card>
+
+            {/* QR 코드 */}
+            <div>
+              <h2 className="text-lg font-semibold text-ios-text mb-3">외부 접수 QR</h2>
+              <QRGenerator
+                url={`${typeof window !== 'undefined' ? window.location.origin : ''}/request?store=${params.id}`}
+                storeName={store.name}
+              />
+            </div>
 
             {/* 방문 이력 (티켓) */}
             <div>

@@ -2,6 +2,27 @@
 
 ---
 
+## 2026-03-23 — Phase 4 완료
+
+### 추가
+
+**외부 접수 (로그인 불필요)**
+- `/request` — 공개 접수 페이지 (범용 QR, 명함/스티커용)
+- `/request?store=uuid` — 거래처 전용 접수 (거래처 정보 자동 채움)
+- `/request/complete` — 접수 완료 안내 페이지
+- `/request/layout.tsx` — 외부접수 레이아웃 (BottomNav 없음)
+- 스팸 방지: 같은 전화번호 10분 내 중복 접수 차단
+- 접수 시 전체 알림 자동 생성 (🌐 외부접수 뱃지)
+
+**QR 생성**
+- `components/common/QRGenerator.tsx` — QR 생성 + 다운로드 (qrcode 패키지)
+- `/admin/stores/[id]` — 거래처 상세에 전용 QR 코드 섹션 추가
+
+### 설정
+- qrcode, @types/qrcode 패키지 설치
+
+---
+
 ## 2026-03-23 — Phase 3 완료
 
 ### 추가
