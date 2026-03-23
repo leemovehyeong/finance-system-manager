@@ -25,8 +25,9 @@ export default function OfficeDashboard() {
   }, []);
 
   const handleSignOut = async () => {
-    await signOut();
+    await fetch('/api/auth/signout', { method: 'POST' });
     router.push('/login');
+    router.refresh();
   };
 
   const fetchData = async () => {
