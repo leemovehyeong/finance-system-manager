@@ -12,10 +12,11 @@ import { SignOut } from '@phosphor-icons/react';
 import type { Ticket } from '@/types';
 
 export default function FieldDashboard() {
-  const { employee, signOut } = useAuth();
+  const { signOut } = useAuth();
   const [myTasks, setMyTasks] = useState<Ticket[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
   const [completedToday, setCompletedToday] = useState(0);
+  const [employeeName, setEmployeeName] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -41,6 +42,7 @@ export default function FieldDashboard() {
       setMyTasks(data.myTasks || []);
       setPendingCount(data.pendingCount || 0);
       setCompletedToday(data.completedToday || 0);
+      setEmployeeName(data.employeeName || '');
     } catch (err) {
       console.error('Field dashboard fetch error:', err);
       setError(err instanceof Error ? err.message : '데이터를 불러오지 못했습니다');
@@ -65,7 +67,7 @@ export default function FieldDashboard() {
     <div className="px-5 pt-8 space-y-7">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-caption text-text-tertiary mb-1">{employee?.name || '사용자'}님, 오늘도 힘내세요</p>
+          <p className="text-caption text-text-tertiary mb-1">{employeeName}님, 오늘도 힘내세요</p>
           <h1 className="text-display text-text-primary">{APP_NAME}</h1>
         </div>
         <button onClick={handleSignOut} className="w-10 h-10 rounded-full bg-surface-secondary flex items-center justify-center press-effect">

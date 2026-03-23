@@ -24,14 +24,17 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    let data;
     if (role === 'admin') {
-      return NextResponse.json(await getAdminData(supabase));
+      data = await getAdminData(supabase);
     } else if (role === 'office') {
-      return NextResponse.json(await getOfficeData(supabase));
+      data = await getOfficeData(supabase);
     } else if (role === 'field') {
-      return NextResponse.json(await getFieldData(supabase, employee.id));
+      data = await getFieldData(supabase, employee.id);
+    } else {
+      return NextResponse.json({ error: 'invalid role' }, { status: 400 });
     }
-    return NextResponse.json({ error: 'invalid role' }, { status: 400 });
+    return NextResponse.json({ ...data, employeeName: employee.name });
   } catch (err) {
     console.error('Dashboard API error:', err);
     return NextResponse.json({ error: 'server error' }, { status: 500 });
