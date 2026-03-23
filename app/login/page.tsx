@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import { APP_NAME } from '@/lib/constants';
 import Input from '@/components/ui/Input';
@@ -14,7 +13,6 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
-  const router = useRouter();
   const supabase = createClient();
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -48,7 +46,7 @@ export default function LoginPage() {
           .single();
 
         if (employee?.role) {
-          router.push(`/${employee.role}/dashboard`);
+          window.location.href = `/${employee.role}/dashboard`;
         } else {
           if (!employee) {
             await supabase.from('employees').insert({
@@ -57,7 +55,7 @@ export default function LoginPage() {
               email: user.email || '',
             });
           }
-          router.push('/pending');
+          window.location.href = '/pending';
         }
       }
     } catch {

@@ -64,7 +64,7 @@ export default function OfficeDashboard() {
     <div className="px-5 pt-8 space-y-7">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-caption text-text-tertiary mb-1">{employee?.name}님, 안녕하세요</p>
+          <p className="text-caption text-text-tertiary mb-1">{employee?.name || '사용자'}님, 안녕하세요</p>
           <h1 className="text-display text-text-primary">{APP_NAME}</h1>
         </div>
         <button onClick={handleSignOut} className="w-10 h-10 rounded-full bg-surface-secondary flex items-center justify-center press-effect">
