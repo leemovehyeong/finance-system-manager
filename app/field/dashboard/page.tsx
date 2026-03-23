@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { APP_NAME } from '@/lib/constants';
 import Card from '@/components/ui/Card';
@@ -20,38 +19,28 @@ export default function FieldDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const supabase = createClient();
 
   useEffect(() => {
-    if (employee) fetchData();
+    fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [employee]);
+  }, []);
 
   const handleSignOut = async () => {
-    await signOut();
+    await fetch('/api/auth/signout', { method: 'POST' });
+    signOut();
     router.push('/login');
+    router.refresh();
   };
 
   const fetchData = async () => {
-    if (!employee) return;
     try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const [tasksRes, pendingRes, completedRes] = await Promise.all([
-        supabase.from('tickets').select('*')
-          .eq('assigned_to', employee.id)
-          .in('status', ['accepted', 'in_progress'])
-          .order('accepted_at', { ascending: false }),
-        supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('tickets').select('*', { count: 'exact', head: true })
-          .eq('assigned_to', employee.id).eq('status', 'completed')
-          .gte('completed_at', today.toISOString()),
-      ]);
-
-      setMyTasks(tasksRes.data || []);
-      setPendingCount(pendingRes.count || 0);
-      setCompletedToday(completedRes.count || 0);
+      const res = await fetch('/api/dashboard?role=field');
+      if (res.status === 401) { router.push('/login'); return; }
+      if (!res.ok) throw new Error(`서버 오류 (${res.status})`);
+      const data = await res.json();
+      setMyTasks(data.myTasks || []);
+      setPendingCount(data.pendingCount || 0);
+      setCompletedToday(data.completedToday || 0);
     } catch (err) {
       console.error('Field dashboard fetch error:', err);
       setError(err instanceof Error ? err.message : '데이터를 불러오지 못했습니다');

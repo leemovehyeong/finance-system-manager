@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { APP_NAME, TICKET_STATUS, PAPER_TYPES } from '@/lib/constants';
 import Card from '@/components/ui/Card';
@@ -15,7 +14,6 @@ import type { Ticket, TicketStatus, Employee, PaperStock } from '@/types';
 export default function AdminDashboard() {
   const router = useRouter();
   const { signOut } = useAuth();
-  const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<Record<string, number>>({});
@@ -29,49 +27,25 @@ export default function AdminDashboard() {
   }, []);
 
   const handleSignOut = async () => {
-    await signOut();
+    await fetch('/api/auth/signout', { method: 'POST' });
+    signOut();
     router.push('/login');
+    router.refresh();
   };
 
   const fetchAll = async () => {
     try {
-      const [statusRes, ticketsRes, employeesRes, stockRes, activeRes] = await Promise.all([
-        supabase.from('tickets').select('status'),
-        supabase.from('tickets')
-          .select('*, assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
-          .order('created_at', { ascending: false })
-          .limit(5),
-        supabase.from('employees')
-          .select('*')
-          .in('role', ['field', 'admin'])
-          .eq('is_active', true),
-        supabase.from('paper_stock').select('*'),
-        supabase.from('tickets')
-          .select('assigned_to')
-          .in('status', ['accepted', 'in_progress']),
-      ]);
-
-      const counts: Record<string, number> = {};
-      for (const key of Object.keys(TICKET_STATUS)) counts[key] = 0;
-      if (statusRes.data) {
-        for (const t of statusRes.data) {
-          if (t.status in counts) counts[t.status]++;
-        }
+      const res = await fetch('/api/dashboard?role=admin');
+      if (res.status === 401) {
+        router.push('/login');
+        return;
       }
-      setStats(counts);
-      setRecentTickets(ticketsRes.data || []);
-      setPaperStock(stockRes.data || []);
-
-      const countMap: Record<string, number> = {};
-      if (activeRes.data) {
-        for (const t of activeRes.data) {
-          if (t.assigned_to) countMap[t.assigned_to] = (countMap[t.assigned_to] || 0) + 1;
-        }
-      }
-      setFieldEmployees((employeesRes.data || []).map((emp: Employee) => ({
-        ...emp,
-        activeCount: countMap[emp.id] || 0,
-      })));
+      if (!res.ok) throw new Error(`서버 오류 (${res.status})`);
+      const data = await res.json();
+      setStats(data.stats || {});
+      setRecentTickets(data.recentTickets || []);
+      setFieldEmployees(data.fieldEmployees || []);
+      setPaperStock(data.paperStock || []);
     } catch (err) {
       console.error('Dashboard fetch error:', err);
       setError(err instanceof Error ? err.message : '데이터를 불러오지 못했습니다');
@@ -94,7 +68,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="px-5 pt-8 space-y-7">
-      {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div>
           <p className="text-caption text-text-tertiary mb-1">관리자</p>
@@ -105,7 +78,6 @@ export default function AdminDashboard() {
         </button>
       </div>
 
-      {/* 상태 카드 */}
       <div className="grid grid-cols-2 gap-3">
         {(Object.entries(TICKET_STATUS) as [TicketStatus, typeof TICKET_STATUS[TicketStatus]][]).slice(0, 4).map(([key, config]) => (
           <Card key={key} className="press-effect cursor-pointer" onClick={() => router.push(`/admin/tickets?status=${key}`)}>
@@ -115,7 +87,6 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* 직원 현황 */}
       <div>
         <h2 className="text-title text-text-primary mb-3">직원 현황</h2>
         <Card padding={false}>
@@ -141,7 +112,6 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      {/* 용지 재고 */}
       {paperStock.length > 0 && (
         <div>
           <h2 className="text-title text-text-primary mb-3">용지 재고</h2>
@@ -155,9 +125,7 @@ export default function AdminDashboard() {
                     <Package size={16} className="text-text-secondary" />
                   </div>
                   <p className="text-micro text-text-tertiary mb-1">{config.label}</p>
-                  <p className={`text-title ${isLow ? 'text-status-urgent' : 'text-text-primary'}`}>
-                    {stock.quantity}
-                  </p>
+                  <p className={`text-title ${isLow ? 'text-status-urgent' : 'text-text-primary'}`}>{stock.quantity}</p>
                   <p className="text-micro text-text-tertiary">{config.unit}</p>
                 </Card>
               );
@@ -166,7 +134,6 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* 최근 티켓 */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-title text-text-primary">최근 티켓</h2>

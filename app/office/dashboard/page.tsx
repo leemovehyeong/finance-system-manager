@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { APP_NAME, TICKET_STATUS } from '@/lib/constants';
 import Card from '@/components/ui/Card';
@@ -20,7 +19,6 @@ export default function OfficeDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const supabase = createClient();
 
   useEffect(() => {
     fetchData();
@@ -28,30 +26,20 @@ export default function OfficeDashboard() {
   }, []);
 
   const handleSignOut = async () => {
-    await signOut();
+    await fetch('/api/auth/signout', { method: 'POST' });
+    signOut();
     router.push('/login');
+    router.refresh();
   };
 
   const fetchData = async () => {
     try {
-      const [ticketsRes, statusRes] = await Promise.all([
-        supabase.from('tickets')
-          .select('*, assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
-          .order('created_at', { ascending: false })
-          .limit(10),
-        supabase.from('tickets').select('status'),
-      ]);
-
-      setTickets(ticketsRes.data || []);
-
-      const counts: Record<string, number> = {};
-      for (const key of Object.keys(TICKET_STATUS)) counts[key] = 0;
-      if (statusRes.data) {
-        for (const t of statusRes.data) {
-          if (t.status in counts) counts[t.status]++;
-        }
-      }
-      setStats(counts);
+      const res = await fetch('/api/dashboard?role=office');
+      if (res.status === 401) { router.push('/login'); return; }
+      if (!res.ok) throw new Error(`서버 오류 (${res.status})`);
+      const data = await res.json();
+      setTickets(data.tickets || []);
+      setStats(data.stats || {});
     } catch (err) {
       console.error('Office dashboard fetch error:', err);
       setError(err instanceof Error ? err.message : '데이터를 불러오지 못했습니다');
