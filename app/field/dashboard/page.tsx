@@ -11,18 +11,31 @@ import { DashboardSkeleton } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
 import type { Ticket } from '@/types';
 
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+  ]);
+}
+
 export default function FieldDashboard() {
-  const { employee } = useAuth();
+  const { employee, signOut } = useAuth();
   const [myTasks, setMyTasks] = useState<Ticket[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
   const [completedToday, setCompletedToday] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
     if (employee) fetchData();
   }, [employee]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
 
   const fetchData = async () => {
     if (!employee) return;
@@ -31,24 +44,27 @@ export default function FieldDashboard() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const [tasksResult, pendingResult, completedResult] = await Promise.allSettled([
-        supabase
-          .from('tickets')
-          .select('*')
-          .eq('assigned_to', employee.id)
-          .in('status', ['accepted', 'in_progress'])
-          .order('accepted_at', { ascending: false }),
-        supabase
-          .from('tickets')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending'),
-        supabase
-          .from('tickets')
-          .select('*', { count: 'exact', head: true })
-          .eq('assigned_to', employee.id)
-          .eq('status', 'completed')
-          .gte('completed_at', today.toISOString()),
-      ]);
+      const [tasksResult, pendingResult, completedResult] = await withTimeout(
+        Promise.allSettled([
+          supabase
+            .from('tickets')
+            .select('*')
+            .eq('assigned_to', employee.id)
+            .in('status', ['accepted', 'in_progress'])
+            .order('accepted_at', { ascending: false }),
+          supabase
+            .from('tickets')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'pending'),
+          supabase
+            .from('tickets')
+            .select('*', { count: 'exact', head: true })
+            .eq('assigned_to', employee.id)
+            .eq('status', 'completed')
+            .gte('completed_at', today.toISOString()),
+        ]),
+        8000
+      );
 
       if (tasksResult.status === 'fulfilled') {
         setMyTasks(tasksResult.value.data || []);
@@ -61,6 +77,7 @@ export default function FieldDashboard() {
       }
     } catch (err) {
       console.error('Field dashboard fetch error:', err);
+      setError(err instanceof Error ? err.message : '데이터를 불러오지 못했습니다');
     } finally {
       setLoading(false);
     }
@@ -74,16 +91,35 @@ export default function FieldDashboard() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="px-5 pt-6 flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <p className="text-ios-subtext text-sm">{error}</p>
+        <button onClick={() => { setLoading(true); setError(null); fetchData(); }} className="text-[#007AFF] text-sm font-medium">
+          다시 시도
+        </button>
+        <button onClick={handleSignOut} className="text-[#FF3B30] text-sm mt-2">
+          로그아웃
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="px-5 pt-6 space-y-6">
       {/* 헤더 */}
-      <div>
-        <p className="text-sm text-ios-subtext mb-1">
-          {employee?.name}님, 오늘도 힘내세요
-        </p>
-        <h1 className="text-2xl font-semibold text-ios-text tracking-tight">
-          {APP_NAME}
-        </h1>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-ios-subtext mb-1">
+            {employee?.name}님, 오늘도 힘내세요
+          </p>
+          <h1 className="text-2xl font-semibold text-ios-text tracking-tight">
+            {APP_NAME}
+          </h1>
+        </div>
+        <button onClick={handleSignOut} className="text-sm text-[#FF3B30] press-effect">
+          로그아웃
+        </button>
       </div>
 
       {/* 요약 카드 */}

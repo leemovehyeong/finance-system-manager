@@ -12,11 +12,19 @@ import { DashboardSkeleton } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
 import type { Ticket, TicketStatus } from '@/types';
 
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+  ]);
+}
+
 export default function OfficeDashboard() {
-  const { employee } = useAuth();
+  const { employee, signOut } = useAuth();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [stats, setStats] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -24,16 +32,24 @@ export default function OfficeDashboard() {
     fetchData();
   }, []);
 
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
+
   const fetchData = async () => {
     try {
-      const [ticketsResult, statsResult] = await Promise.allSettled([
-        supabase
-          .from('tickets')
-          .select('*, assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
-          .order('created_at', { ascending: false })
-          .limit(10),
-        supabase.from('tickets').select('status'),
-      ]);
+      const [ticketsResult, statsResult] = await withTimeout(
+        Promise.allSettled([
+          supabase
+            .from('tickets')
+            .select('*, assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
+            .order('created_at', { ascending: false })
+            .limit(10),
+          supabase.from('tickets').select('status'),
+        ]),
+        8000
+      );
 
       if (ticketsResult.status === 'fulfilled') {
         setTickets(ticketsResult.value.data || []);
@@ -53,6 +69,7 @@ export default function OfficeDashboard() {
       }
     } catch (err) {
       console.error('Office dashboard fetch error:', err);
+      setError(err instanceof Error ? err.message : '데이터를 불러오지 못했습니다');
     } finally {
       setLoading(false);
     }
@@ -66,16 +83,35 @@ export default function OfficeDashboard() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="px-5 pt-6 flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <p className="text-ios-subtext text-sm">{error}</p>
+        <button onClick={() => { setLoading(true); setError(null); fetchData(); }} className="text-[#007AFF] text-sm font-medium">
+          다시 시도
+        </button>
+        <button onClick={handleSignOut} className="text-[#FF3B30] text-sm mt-2">
+          로그아웃
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="px-5 pt-6 space-y-6">
       {/* 헤더 */}
-      <div>
-        <p className="text-sm text-ios-subtext mb-1">
-          {employee?.name}님, 안녕하세요
-        </p>
-        <h1 className="text-2xl font-semibold text-ios-text tracking-tight">
-          {APP_NAME}
-        </h1>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-ios-subtext mb-1">
+            {employee?.name}님, 안녕하세요
+          </p>
+          <h1 className="text-2xl font-semibold text-ios-text tracking-tight">
+            {APP_NAME}
+          </h1>
+        </div>
+        <button onClick={handleSignOut} className="text-sm text-[#FF3B30] press-effect">
+          로그아웃
+        </button>
       </div>
 
       {/* 새 접수 버튼 */}

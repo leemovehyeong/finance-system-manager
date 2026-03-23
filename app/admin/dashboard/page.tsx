@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
+import { useAuth } from '@/lib/auth-context';
 import { APP_NAME, TICKET_STATUS, PAPER_TYPES } from '@/lib/constants';
 import Card from '@/components/ui/Card';
 import TicketCard from '@/components/ticket/TicketCard';
@@ -10,10 +11,19 @@ import { DashboardSkeleton } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
 import type { Ticket, TicketStatus, Employee, PaperStock } from '@/types';
 
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+  ]);
+}
+
 export default function AdminDashboard() {
   const router = useRouter();
+  const { signOut } = useAuth();
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<Record<string, number>>({});
   const [recentTickets, setRecentTickets] = useState<Ticket[]>([]);
   const [fieldEmployees, setFieldEmployees] = useState<(Employee & { activeCount: number })[]>([]);
@@ -23,25 +33,29 @@ export default function AdminDashboard() {
     fetchAll();
   }, []);
 
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
+
   const fetchAll = async () => {
     try {
-      // 모든 쿼리를 병렬로 실행 (하나 실패해도 나머지는 정상 동작)
-      const [statsResult, ticketsResult, employeesResult, stockResult] = await Promise.allSettled([
-        // 1) 티켓 상태별 카운트 - 한 번의 쿼리로
-        supabase.from('tickets').select('status'),
-        // 2) 최근 티켓
-        supabase.from('tickets')
-          .select('*, assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
-          .order('created_at', { ascending: false })
-          .limit(5),
-        // 3) 현장직 직원
-        supabase.from('employees')
-          .select('*')
-          .in('role', ['field', 'admin'])
-          .eq('is_active', true),
-        // 4) 용지 재고
-        supabase.from('paper_stock').select('*'),
-      ]);
+      // 8초 타임아웃 — hang 방지
+      const [statsResult, ticketsResult, employeesResult, stockResult] = await withTimeout(
+        Promise.allSettled([
+          supabase.from('tickets').select('status'),
+          supabase.from('tickets')
+            .select('*, assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
+            .order('created_at', { ascending: false })
+            .limit(5),
+          supabase.from('employees')
+            .select('*')
+            .in('role', ['field', 'admin'])
+            .eq('is_active', true),
+          supabase.from('paper_stock').select('*'),
+        ]),
+        8000
+      );
 
       // 상태별 카운트 집계
       if (statsResult.status === 'fulfilled' && statsResult.value.data) {
@@ -65,7 +79,6 @@ export default function AdminDashboard() {
       // 직원 + 진행 중 건수
       if (employeesResult.status === 'fulfilled' && employeesResult.value.data) {
         const employees = employeesResult.value.data;
-        // 진행 중인 티켓을 한 번에 가져와서 집계
         const { data: activeTickets } = await supabase
           .from('tickets')
           .select('assigned_to')
@@ -91,6 +104,7 @@ export default function AdminDashboard() {
       }
     } catch (err) {
       console.error('Dashboard fetch error:', err);
+      setError(err instanceof Error ? err.message : '데이터를 불러오지 못했습니다');
     } finally {
       setLoading(false);
     }
@@ -104,14 +118,33 @@ export default function AdminDashboard() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="px-5 pt-6 flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <p className="text-ios-subtext text-sm">{error}</p>
+        <button onClick={() => { setLoading(true); setError(null); fetchAll(); }} className="text-[#007AFF] text-sm font-medium">
+          다시 시도
+        </button>
+        <button onClick={handleSignOut} className="text-[#FF3B30] text-sm mt-2">
+          로그아웃
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="px-5 pt-6 space-y-6">
       {/* 헤더 */}
-      <div>
-        <p className="text-sm text-ios-subtext mb-1">관리자</p>
-        <h1 className="text-2xl font-semibold text-ios-text tracking-tight">
-          {APP_NAME}
-        </h1>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-ios-subtext mb-1">관리자</p>
+          <h1 className="text-2xl font-semibold text-ios-text tracking-tight">
+            {APP_NAME}
+          </h1>
+        </div>
+        <button onClick={handleSignOut} className="text-sm text-[#FF3B30] press-effect">
+          로그아웃
+        </button>
       </div>
 
       {/* 상태 카드 */}
