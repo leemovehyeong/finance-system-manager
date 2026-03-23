@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import { TICKET_STATUS } from '@/lib/constants';
@@ -11,7 +11,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import type { Ticket, TicketStatus } from '@/types';
 import { cn } from '@/lib/utils';
 
-export default function OfficeTicketsPage() {
+function OfficeTicketsContent() {
   const searchParams = useSearchParams();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,5 +85,13 @@ export default function OfficeTicketsPage() {
         )}
       </div>
     </>
+  );
+}
+
+export default function OfficeTicketsPage() {
+  return (
+    <Suspense fallback={<div className="px-5 py-6 space-y-3">{[...Array(5)].map((_, i) => <TicketCardSkeleton key={i} />)}</div>}>
+      <OfficeTicketsContent />
+    </Suspense>
   );
 }
