@@ -11,24 +11,24 @@ interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
 const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, label, error, ...props }, ref) => {
     return (
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {label && (
-          <label className="block text-sm font-medium text-ios-text">
+          <label className="block text-caption font-medium text-text-secondary">
             {label}
           </label>
         )}
         <textarea
           ref={ref}
           className={cn(
-            'w-full min-h-[120px] px-4 py-3 bg-[#F2F2F7] rounded-xl border-none text-ios-text placeholder:text-ios-subtext resize-none',
-            'focus:outline-none focus:ring-2 focus:ring-[#007AFF] transition-shadow',
-            error && 'ring-2 ring-[#FF3B30]',
+            'w-full min-h-[120px] px-4 py-3 bg-surface border border-border rounded-xl text-text-primary placeholder:text-text-tertiary resize-none',
+            'focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all',
+            error && 'border-status-urgent',
             className
           )}
           {...props}
         />
         {error && (
-          <p className="text-xs text-[#FF3B30] ml-1">{error}</p>
+          <p className="text-micro text-status-urgent ml-1">{error}</p>
         )}
       </div>
     );

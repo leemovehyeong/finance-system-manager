@@ -73,7 +73,7 @@ export default function FieldTicketsFeed() {
         {loading ? (
           [...Array(5)].map((_, i) => <TicketCardSkeleton key={i} />)
         ) : tickets.length === 0 ? (
-          <EmptyState icon="📭" title="대기 중인 업무가 없습니다" />
+          <EmptyState icon="tray" title="대기 중인 업무가 없습니다" />
         ) : (
           tickets.map((ticket) => (
             <TicketCard

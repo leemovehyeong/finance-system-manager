@@ -1,35 +1,35 @@
 export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || '금융시스템매니저';
 
 export const TICKET_TYPES = {
-  as: { label: 'A/S', color: '#FF3B30' },
-  install: { label: '설치', color: '#007AFF' },
-  paper: { label: '용지', color: '#34C759' },
-  inspect: { label: '점검', color: '#AF52DE' },
-  sales: { label: '영업', color: '#FF9500' },
-  other: { label: '기타', color: '#8E8E93' },
+  as: { label: 'A/S', color: '#333333' },
+  install: { label: '설치', color: '#555555' },
+  paper: { label: '용지', color: '#666666' },
+  inspect: { label: '점검', color: '#777777' },
+  sales: { label: '영업', color: '#444444' },
+  other: { label: '기타', color: '#999999' },
 } as const;
 
 export const TICKET_STATUS = {
-  pending: { label: '대기 중', color: '#FF9500', bg: 'bg-orange-50', text: 'text-orange-600' },
-  accepted: { label: '수락됨', color: '#007AFF', bg: 'bg-blue-50', text: 'text-blue-600' },
-  in_progress: { label: '처리 중', color: '#007AFF', bg: 'bg-blue-50', text: 'text-blue-600' },
-  completed: { label: '완료', color: '#34C759', bg: 'bg-green-50', text: 'text-green-600' },
-  cancelled: { label: '취소', color: '#8E8E93', bg: 'bg-gray-50', text: 'text-gray-500' },
+  pending: { label: '대기', color: '#B8860B', bg: 'bg-amber-50', text: 'text-amber-700' },
+  accepted: { label: '수락', color: '#333333', bg: 'bg-gray-100', text: 'text-gray-800' },
+  in_progress: { label: '처리 중', color: '#333333', bg: 'bg-gray-100', text: 'text-gray-800' },
+  completed: { label: '완료', color: '#2D8A4E', bg: 'bg-emerald-50', text: 'text-emerald-700' },
+  cancelled: { label: '취소', color: '#999999', bg: 'bg-gray-50', text: 'text-gray-400' },
 } as const;
 
 export const PRIORITY = {
-  urgent: { label: '긴급', color: '#FF3B30' },
-  normal: { label: '일반', color: '#8E8E93' },
-  low: { label: '여유', color: '#34C759' },
+  urgent: { label: '긴급', color: '#CC3333' },
+  normal: { label: '일반', color: '#999999' },
+  low: { label: '여유', color: '#2D8A4E' },
 } as const;
 
 export const SALES_STATUS = {
-  prospecting: { label: '영업 중', color: '#FF9500' },
-  contracted: { label: '계약 완료', color: '#007AFF' },
-  install_scheduled: { label: '설치 예정', color: '#AF52DE' },
-  installing: { label: '설치 중', color: '#5856D6' },
-  completed: { label: '완료', color: '#34C759' },
-  cancelled: { label: '취소', color: '#8E8E93' },
+  prospecting: { label: '영업 중', color: '#B8860B' },
+  contracted: { label: '계약 완료', color: '#333333' },
+  install_scheduled: { label: '설치 예정', color: '#555555' },
+  installing: { label: '설치 중', color: '#444444' },
+  completed: { label: '완료', color: '#2D8A4E' },
+  cancelled: { label: '취소', color: '#999999' },
 } as const;
 
 export const PAPER_TYPES = {
@@ -55,7 +55,7 @@ export const EQUIPMENT_TYPES = {
 
 export const TICKET_SOURCE = {
   internal: { label: '내부접수', badge: '' },
-  external: { label: '외부접수', badge: '🌐 외부접수' },
+  external: { label: '외부접수', badge: '외부' },
 } as const;
 
 export const REGIONS = ['여수', '순천', '광양', '기타'] as const;

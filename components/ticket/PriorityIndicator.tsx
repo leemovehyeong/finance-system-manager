@@ -1,4 +1,5 @@
 import { PRIORITY } from '@/lib/constants';
+import { Warning } from '@phosphor-icons/react/dist/ssr';
 import type { Priority } from '@/types';
 
 interface PriorityIndicatorProps {
@@ -6,16 +7,16 @@ interface PriorityIndicatorProps {
 }
 
 export default function PriorityIndicator({ priority }: PriorityIndicatorProps) {
-  const config = PRIORITY[priority];
-
   if (priority === 'normal') return null;
+
+  const config = PRIORITY[priority];
 
   return (
     <span
-      className="inline-flex items-center gap-1 text-xs font-medium"
+      className="inline-flex items-center gap-0.5 text-micro font-medium"
       style={{ color: config.color }}
     >
-      {priority === 'urgent' && '●'}
+      {priority === 'urgent' && <Warning size={12} weight="fill" />}
       {config.label}
     </span>
   );

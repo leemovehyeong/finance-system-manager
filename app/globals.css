@@ -2,11 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
+
 :root {
-  --background: #FFFFFF;
-  --foreground: #1C1C1E;
-  --ios-bg: #F2F2F7;
-  --primary: #007AFF;
+  --background: #FAFAFA;
+  --foreground: #111111;
+  --surface: #FFFFFF;
+  --primary: #000000;
 }
 
 * {
@@ -15,44 +17,41 @@
 
 body {
   color: var(--foreground);
-  background: var(--ios-bg);
-  font-family: 'SF Pro Display', 'SF Pro Text', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--background);
+  font-family: 'Pretendard Variable', 'Pretendard', 'SF Pro Display', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
 }
 
-/* iOS-style 스크롤 */
 ::-webkit-scrollbar {
   display: none;
 }
 
-/* 버튼 press 효과 */
 @layer utilities {
   .press-effect {
-    @apply transition-transform active:scale-[0.97] active:opacity-70;
+    @apply transition-all duration-150 active:scale-[0.98] active:opacity-80;
   }
 }
 
-/* 스켈레톤 애니메이션 */
+/* Skeleton */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #F2F2F7 25%, #E5E5EA 50%, #F2F2F7 75%);
+  background: linear-gradient(90deg, #F0F0F0 25%, #E8E8E8 50%, #F0F0F0 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
   border-radius: 0.75rem;
 }
 
-/* Bottom sheet 배경 */
 .backdrop-blur-sheet {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
 
-/* Safe area */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }

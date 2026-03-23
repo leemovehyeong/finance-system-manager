@@ -65,7 +65,7 @@ export default function NotificationsList({ basePath }: NotificationsListProps) 
         {loading ? (
           [...Array(5)].map((_, i) => <TicketCardSkeleton key={i} />)
         ) : notifications.length === 0 ? (
-          <EmptyState icon="🔔" title="알림이 없습니다" />
+          <EmptyState icon="bell" title="알림이 없습니다" />
         ) : (
           notifications.map((notification) => (
             <Card

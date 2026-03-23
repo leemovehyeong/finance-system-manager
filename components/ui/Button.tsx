@@ -12,26 +12,26 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', loading, disabled, children, ...props }, ref) => {
     const variants = {
-      primary: 'bg-[#007AFF] text-white',
-      secondary: 'bg-[#F2F2F7] text-[#007AFF]',
-      danger: 'bg-[#FF3B30] text-white',
-      ghost: 'bg-transparent text-[#007AFF]',
+      primary: 'bg-black text-white hover:bg-neutral-800',
+      secondary: 'bg-surface-secondary text-text-primary border border-border',
+      danger: 'bg-status-urgent text-white',
+      ghost: 'bg-transparent text-text-secondary hover:bg-surface-secondary',
     };
 
     const sizes = {
-      sm: 'h-[36px] px-4 text-sm rounded-lg',
-      md: 'h-[44px] px-5 text-base rounded-xl',
-      lg: 'h-[52px] px-6 text-base font-semibold rounded-xl',
+      sm: 'h-9 px-4 text-caption rounded-full',
+      md: 'h-11 px-5 text-body rounded-full',
+      lg: 'h-12 px-6 text-body font-semibold rounded-full',
     };
 
     return (
       <button
         ref={ref}
         className={cn(
-          'inline-flex items-center justify-center press-effect font-medium transition-colors',
+          'inline-flex items-center justify-center press-effect font-medium transition-all',
           variants[variant],
           sizes[size],
-          (disabled || loading) && 'opacity-50 pointer-events-none',
+          (disabled || loading) && 'opacity-40 pointer-events-none',
           className
         )}
         disabled={disabled || loading}

@@ -125,7 +125,7 @@ export default function StoreDetailPage({ params }: { params: { id: string } }) 
     return (
       <>
         <TopBar title="거래처 상세" showBack />
-        <EmptyState icon="🏪" title="거래처를 찾을 수 없습니다" />
+        <EmptyState icon="store" title="거래처를 찾을 수 없습니다" />
       </>
     );
   }
@@ -320,7 +320,7 @@ export default function StoreDetailPage({ params }: { params: { id: string } }) 
                 방문 이력 ({tickets.length})
               </h2>
               {tickets.length === 0 ? (
-                <EmptyState icon="📋" title="방문 이력이 없습니다" />
+                <EmptyState icon="clipboard" title="방문 이력이 없습니다" />
               ) : (
                 <div className="space-y-3">
                   {tickets.map((ticket) => (

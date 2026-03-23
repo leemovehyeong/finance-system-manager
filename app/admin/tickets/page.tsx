@@ -75,7 +75,7 @@ function AdminTicketsContent() {
         {loading ? (
           [...Array(5)].map((_, i) => <TicketCardSkeleton key={i} />)
         ) : tickets.length === 0 ? (
-          <EmptyState icon="📋" title="해당 티켓이 없습니다" />
+          <EmptyState icon="clipboard" title="해당 티켓이 없습니다" />
         ) : (
           tickets.map((ticket) => (
             <TicketCard key={ticket.id} ticket={ticket} basePath="/admin" />

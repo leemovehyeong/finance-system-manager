@@ -85,7 +85,7 @@ export default function AdminSalesPage() {
         {loading ? (
           [...Array(5)].map((_, i) => <TicketCardSkeleton key={i} />)
         ) : projects.length === 0 ? (
-          <EmptyState icon="📦" title="영업 프로젝트가 없습니다" />
+          <EmptyState icon="package" title="영업 프로젝트가 없습니다" />
         ) : (
           projects.map((project) => {
             const statusConfig = SALES_STATUS[project.sales_status];

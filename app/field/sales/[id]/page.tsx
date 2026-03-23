@@ -88,7 +88,7 @@ export default function FieldSalesDetailPage({ params }: { params: { id: string 
     return (
       <>
         <TopBar title="설치" showBack />
-        <EmptyState icon="📦" title="프로젝트를 찾을 수 없습니다" />
+        <EmptyState icon="package" title="프로젝트를 찾을 수 없습니다" />
       </>
     );
   }

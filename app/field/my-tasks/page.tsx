@@ -74,7 +74,7 @@ export default function FieldMyTasks() {
           [...Array(3)].map((_, i) => <TicketCardSkeleton key={i} />)
         ) : tickets.length === 0 ? (
           <EmptyState
-            icon={tab === 'active' ? '✅' : '📋'}
+            icon={tab === 'active' ? 'check' : 'clipboard'}
             title={tab === 'active' ? '진행 중인 업무가 없습니다' : '완료된 업무가 없습니다'}
           />
         ) : (

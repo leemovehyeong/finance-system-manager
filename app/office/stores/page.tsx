@@ -51,7 +51,7 @@ export default function OfficeStoresPage() {
         {loading ? (
           [...Array(5)].map((_, i) => <TicketCardSkeleton key={i} />)
         ) : stores.length === 0 ? (
-          <EmptyState icon="🏪" title="거래처가 없습니다" />
+          <EmptyState icon="store" title="거래처가 없습니다" />
         ) : (
           stores.map((store) => (
             <Card key={store.id} className="press-effect">
