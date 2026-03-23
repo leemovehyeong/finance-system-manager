@@ -22,44 +22,48 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
-    if (mode === 'signup') {
-      const { error: signUpError } = await supabase.auth.signUp({ email, password });
-      if (signUpError) {
-        setError(signUpError.message === 'User already registered'
-          ? '이미 등록된 이메일입니다.'
-          : '회원가입에 실패했습니다. 비밀번호는 6자 이상이어야 합니다.');
-        setLoading(false);
+    try {
+      if (mode === 'signup') {
+        const { error: signUpError } = await supabase.auth.signUp({ email, password });
+        if (signUpError) {
+          setError(signUpError.message === 'User already registered'
+            ? '이미 등록된 이메일입니다.'
+            : '회원가입에 실패했습니다. 비밀번호는 6자 이상이어야 합니다.');
+          return;
+        }
+      }
+
+      const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      if (authError) {
+        setError('이메일 또는 비밀번호가 올바르지 않습니다.');
         return;
       }
-    }
 
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-    if (authError) {
-      setError('이메일 또는 비밀번호가 올바르지 않습니다.');
-      setLoading(false);
-      return;
-    }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: employee } = await supabase
+          .from('employees')
+          .select('role')
+          .eq('auth_id', user.id)
+          .single();
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: employee } = await supabase
-        .from('employees')
-        .select('role')
-        .eq('auth_id', user.id)
-        .single();
-
-      if (employee?.role) {
-        router.push(`/${employee.role}/dashboard`);
-      } else {
-        if (!employee) {
-          await supabase.from('employees').insert({
-            auth_id: user.id,
-            name: user.email?.split('@')[0] || '미지정',
-            email: user.email || '',
-          });
+        if (employee?.role) {
+          router.push(`/${employee.role}/dashboard`);
+        } else {
+          if (!employee) {
+            await supabase.from('employees').insert({
+              auth_id: user.id,
+              name: user.email?.split('@')[0] || '미지정',
+              email: user.email || '',
+            });
+          }
+          router.push('/pending');
         }
-        router.push('/pending');
       }
+    } catch {
+      setError('로그인 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setLoading(false);
     }
   };
 
