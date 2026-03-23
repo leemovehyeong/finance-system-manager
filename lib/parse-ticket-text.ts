@@ -47,7 +47,6 @@ export function parseTicketText(text: string): ParsedTicket {
   };
 
   const descLines: string[] = [];
-  let foundSeparator = false;
   const usedIndices = new Set<number>();
 
   // 1차: 전화번호 찾기
@@ -85,7 +84,6 @@ export function parseTicketText(text: string): ParsedTicket {
     if (usedIndices.has(i)) continue;
     if (SEPARATOR_REGEX.test(lines[i])) {
       usedIndices.add(i);
-      foundSeparator = true;
       // 구분자 이후는 전부 증상
       for (let j = i + 1; j < lines.length; j++) {
         if (!usedIndices.has(j)) {
