@@ -25,51 +25,70 @@ export default function AdminDashboard() {
 
   const fetchAll = async () => {
     try {
-      // 티켓 상태별 카운트
-      const counts: Record<string, number> = {};
-      for (const key of Object.keys(TICKET_STATUS)) {
-        const { count } = await supabase
-          .from('tickets')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', key);
-        counts[key] = count || 0;
+      // 모든 쿼리를 병렬로 실행 (하나 실패해도 나머지는 정상 동작)
+      const [statsResult, ticketsResult, employeesResult, stockResult] = await Promise.allSettled([
+        // 1) 티켓 상태별 카운트 - 한 번의 쿼리로
+        supabase.from('tickets').select('status'),
+        // 2) 최근 티켓
+        supabase.from('tickets')
+          .select('*, assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
+          .order('created_at', { ascending: false })
+          .limit(5),
+        // 3) 현장직 직원
+        supabase.from('employees')
+          .select('*')
+          .in('role', ['field', 'admin'])
+          .eq('is_active', true),
+        // 4) 용지 재고
+        supabase.from('paper_stock').select('*'),
+      ]);
+
+      // 상태별 카운트 집계
+      if (statsResult.status === 'fulfilled' && statsResult.value.data) {
+        const counts: Record<string, number> = {};
+        for (const key of Object.keys(TICKET_STATUS)) {
+          counts[key] = 0;
+        }
+        for (const ticket of statsResult.value.data) {
+          if (ticket.status in counts) {
+            counts[ticket.status]++;
+          }
+        }
+        setStats(counts);
       }
-      setStats(counts);
 
       // 최근 티켓
-      const { data: tickets } = await supabase
-        .from('tickets')
-        .select('*, assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
-        .order('created_at', { ascending: false })
-        .limit(5);
-      setRecentTickets(tickets || []);
+      if (ticketsResult.status === 'fulfilled') {
+        setRecentTickets(ticketsResult.value.data || []);
+      }
 
-      // 현장직 직원 + 진행 중 건수
-      const { data: employees } = await supabase
-        .from('employees')
-        .select('*')
-        .in('role', ['field', 'admin'])
-        .eq('is_active', true);
+      // 직원 + 진행 중 건수
+      if (employeesResult.status === 'fulfilled' && employeesResult.value.data) {
+        const employees = employeesResult.value.data;
+        // 진행 중인 티켓을 한 번에 가져와서 집계
+        const { data: activeTickets } = await supabase
+          .from('tickets')
+          .select('assigned_to')
+          .in('status', ['accepted', 'in_progress']);
 
-      if (employees) {
-        const withCounts = await Promise.all(
-          employees.map(async (emp) => {
-            const { count } = await supabase
-              .from('tickets')
-              .select('*', { count: 'exact', head: true })
-              .eq('assigned_to', emp.id)
-              .in('status', ['accepted', 'in_progress']);
-            return { ...emp, activeCount: count || 0 };
-          })
-        );
-        setFieldEmployees(withCounts);
+        const countMap: Record<string, number> = {};
+        if (activeTickets) {
+          for (const t of activeTickets) {
+            if (t.assigned_to) {
+              countMap[t.assigned_to] = (countMap[t.assigned_to] || 0) + 1;
+            }
+          }
+        }
+        setFieldEmployees(employees.map((emp) => ({
+          ...emp,
+          activeCount: countMap[emp.id] || 0,
+        })));
       }
 
       // 용지 재고
-      const { data: stock } = await supabase
-        .from('paper_stock')
-        .select('*');
-      setPaperStock(stock || []);
+      if (stockResult.status === 'fulfilled') {
+        setPaperStock(stockResult.value.data || []);
+      }
     } catch (err) {
       console.error('Dashboard fetch error:', err);
     } finally {

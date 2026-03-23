@@ -25,31 +25,37 @@ export default function OfficeDashboard() {
   }, []);
 
   const fetchData = async () => {
-    // 오늘 날짜
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    try {
+      const [ticketsResult, statsResult] = await Promise.allSettled([
+        supabase
+          .from('tickets')
+          .select('*, assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
+          .order('created_at', { ascending: false })
+          .limit(10),
+        supabase.from('tickets').select('status'),
+      ]);
 
-    // 최근 티켓
-    const { data: ticketData } = await supabase
-      .from('tickets')
-      .select('*, assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
-      .order('created_at', { ascending: false })
-      .limit(10);
+      if (ticketsResult.status === 'fulfilled') {
+        setTickets(ticketsResult.value.data || []);
+      }
 
-    setTickets(ticketData || []);
-
-    // 상태별 카운트
-    const counts: Record<string, number> = {};
-    for (const key of Object.keys(TICKET_STATUS)) {
-      const { count } = await supabase
-        .from('tickets')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', key);
-      counts[key] = count || 0;
+      if (statsResult.status === 'fulfilled' && statsResult.value.data) {
+        const counts: Record<string, number> = {};
+        for (const key of Object.keys(TICKET_STATUS)) {
+          counts[key] = 0;
+        }
+        for (const ticket of statsResult.value.data) {
+          if (ticket.status in counts) {
+            counts[ticket.status]++;
+          }
+        }
+        setStats(counts);
+      }
+    } catch (err) {
+      console.error('Office dashboard fetch error:', err);
+    } finally {
+      setLoading(false);
     }
-    setStats(counts);
-
-    setLoading(false);
   };
 
   if (loading) {

@@ -27,37 +27,43 @@ export default function FieldDashboard() {
   const fetchData = async () => {
     if (!employee) return;
 
-    // 내 진행 중 업무
-    const { data: tasks } = await supabase
-      .from('tickets')
-      .select('*')
-      .eq('assigned_to', employee.id)
-      .in('status', ['accepted', 'in_progress'])
-      .order('accepted_at', { ascending: false });
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    setMyTasks(tasks || []);
+      const [tasksResult, pendingResult, completedResult] = await Promise.allSettled([
+        supabase
+          .from('tickets')
+          .select('*')
+          .eq('assigned_to', employee.id)
+          .in('status', ['accepted', 'in_progress'])
+          .order('accepted_at', { ascending: false }),
+        supabase
+          .from('tickets')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending'),
+        supabase
+          .from('tickets')
+          .select('*', { count: 'exact', head: true })
+          .eq('assigned_to', employee.id)
+          .eq('status', 'completed')
+          .gte('completed_at', today.toISOString()),
+      ]);
 
-    // 대기 중 건수
-    const { count: pending } = await supabase
-      .from('tickets')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'pending');
-
-    setPendingCount(pending || 0);
-
-    // 오늘 완료
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const { count: completed } = await supabase
-      .from('tickets')
-      .select('*', { count: 'exact', head: true })
-      .eq('assigned_to', employee.id)
-      .eq('status', 'completed')
-      .gte('completed_at', today.toISOString());
-
-    setCompletedToday(completed || 0);
-
-    setLoading(false);
+      if (tasksResult.status === 'fulfilled') {
+        setMyTasks(tasksResult.value.data || []);
+      }
+      if (pendingResult.status === 'fulfilled') {
+        setPendingCount(pendingResult.value.count || 0);
+      }
+      if (completedResult.status === 'fulfilled') {
+        setCompletedToday(completedResult.value.count || 0);
+      }
+    } catch (err) {
+      console.error('Field dashboard fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {
