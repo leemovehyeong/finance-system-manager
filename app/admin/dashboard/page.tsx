@@ -24,53 +24,57 @@ export default function AdminDashboard() {
   }, []);
 
   const fetchAll = async () => {
-    // 티켓 상태별 카운트
-    const counts: Record<string, number> = {};
-    for (const key of Object.keys(TICKET_STATUS)) {
-      const { count } = await supabase
+    try {
+      // 티켓 상태별 카운트
+      const counts: Record<string, number> = {};
+      for (const key of Object.keys(TICKET_STATUS)) {
+        const { count } = await supabase
+          .from('tickets')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', key);
+        counts[key] = count || 0;
+      }
+      setStats(counts);
+
+      // 최근 티켓
+      const { data: tickets } = await supabase
         .from('tickets')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', key);
-      counts[key] = count || 0;
+        .select('*, assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      setRecentTickets(tickets || []);
+
+      // 현장직 직원 + 진행 중 건수
+      const { data: employees } = await supabase
+        .from('employees')
+        .select('*')
+        .in('role', ['field', 'admin'])
+        .eq('is_active', true);
+
+      if (employees) {
+        const withCounts = await Promise.all(
+          employees.map(async (emp) => {
+            const { count } = await supabase
+              .from('tickets')
+              .select('*', { count: 'exact', head: true })
+              .eq('assigned_to', emp.id)
+              .in('status', ['accepted', 'in_progress']);
+            return { ...emp, activeCount: count || 0 };
+          })
+        );
+        setFieldEmployees(withCounts);
+      }
+
+      // 용지 재고
+      const { data: stock } = await supabase
+        .from('paper_stock')
+        .select('*');
+      setPaperStock(stock || []);
+    } catch (err) {
+      console.error('Dashboard fetch error:', err);
+    } finally {
+      setLoading(false);
     }
-    setStats(counts);
-
-    // 최근 티켓
-    const { data: tickets } = await supabase
-      .from('tickets')
-      .select('*, assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
-      .order('created_at', { ascending: false })
-      .limit(5);
-    setRecentTickets(tickets || []);
-
-    // 현장직 직원 + 진행 중 건수
-    const { data: employees } = await supabase
-      .from('employees')
-      .select('*')
-      .in('role', ['field', 'admin'])
-      .eq('is_active', true);
-
-    if (employees) {
-      const withCounts = await Promise.all(
-        employees.map(async (emp) => {
-          const { count } = await supabase
-            .from('tickets')
-            .select('*', { count: 'exact', head: true })
-            .eq('assigned_to', emp.id)
-            .in('status', ['accepted', 'in_progress']);
-          return { ...emp, activeCount: count || 0 };
-        })
-      );
-      setFieldEmployees(withCounts);
-    }
-
-    // 용지 재고
-    const { data: stock } = await supabase
-      .from('paper_stock')
-      .select('*');
-    setPaperStock(stock || []);
-
-    setLoading(false);
   };
 
   if (loading) {
