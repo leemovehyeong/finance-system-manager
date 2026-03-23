@@ -11,7 +11,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import type { Ticket } from '@/types';
 
 export default function FieldDashboard() {
-  const { employee, signOut } = useAuth();
+  const { employee } = useAuth();
   const [myTasks, setMyTasks] = useState<Ticket[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
   const [completedToday, setCompletedToday] = useState(0);

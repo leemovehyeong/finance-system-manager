@@ -12,7 +12,7 @@ import type { Ticket, TicketStatus, Employee, PaperStock } from '@/types';
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { signOut } = useAuth();
+  useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<Record<string, number>>({});

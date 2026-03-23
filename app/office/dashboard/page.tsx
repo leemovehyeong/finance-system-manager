@@ -12,7 +12,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import type { Ticket, TicketStatus } from '@/types';
 
 export default function OfficeDashboard() {
-  const { employee, signOut } = useAuth();
+  const { employee } = useAuth();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [stats, setStats] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
