@@ -69,13 +69,6 @@ export default function AdminEmployeesPage() {
     fetchData();
   };
 
-  const handleRoleChange = async (employeeId: string, newRole: Role) => {
-    await supabase
-      .from('employees')
-      .update({ role: newRole })
-      .eq('id', employeeId);
-    fetchData();
-  };
 
   const handleDelete = async (employeeId: string) => {
     if (!confirm('이 직원을 삭제하시겠습니까?')) return;
@@ -179,32 +172,61 @@ export default function AdminEmployeesPage() {
             <div className="space-y-3">
               {employees.map((emp) => (
                 <Card key={emp.id}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[#F2F2F7] flex items-center justify-center text-base font-medium text-ios-text">
-                        {emp.name.slice(0, 1)}
+                  {editingId === emp.id ? (
+                    <div className="space-y-3">
+                      <Input
+                        label="이름"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                      />
+                      <Select
+                        label="역할"
+                        options={roleOptions}
+                        value={editRole}
+                        onChange={(e) => setEditRole(e.target.value)}
+                      />
+                      <Input
+                        label="전화번호"
+                        type="tel"
+                        placeholder="010-0000-0000"
+                        value={editPhone}
+                        onChange={(e) => setEditPhone(e.target.value)}
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="secondary" className="flex-1" onClick={() => setEditingId(null)}>취소</Button>
+                        <Button size="sm" className="flex-1" onClick={async () => {
+                          await supabase.from('employees').update({
+                            name: editName,
+                            role: editRole,
+                            phone: editPhone || null,
+                          }).eq('id', emp.id);
+                          setEditingId(null);
+                          fetchData();
+                        }}>저장</Button>
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-base font-semibold text-ios-text">{emp.name}</span>
-                          {emp.role && <Badge label={ROLES[emp.role].label} color={roleColor[emp.role]} />}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 flex-1 min-w-0 press-effect cursor-pointer" onClick={() => {
+                        setEditingId(emp.id);
+                        setEditName(emp.name);
+                        setEditRole(emp.role || 'field');
+                        setEditPhone(emp.phone || '');
+                      }}>
+                        <div className="w-10 h-10 rounded-full bg-[#F2F2F7] flex items-center justify-center text-base font-medium text-ios-text flex-shrink-0">
+                          {emp.name.slice(0, 1)}
                         </div>
-                        <p className="text-sm text-ios-subtext">{emp.email}</p>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base font-semibold text-ios-text">{emp.name}</span>
+                            {emp.role && <Badge label={ROLES[emp.role].label} color={roleColor[emp.role]} />}
+                          </div>
+                          <p className="text-sm text-ios-subtext truncate">{emp.email}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
                       <PhoneLink phone={emp.phone} />
-                      <select
-                        value={emp.role || ''}
-                        onChange={(e) => handleRoleChange(emp.id, e.target.value as Role)}
-                        className="text-xs bg-[#F2F2F7] rounded-lg px-2 py-1 text-ios-text"
-                      >
-                        {roleOptions.map((opt) => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
                     </div>
-                  </div>
+                  )}
                 </Card>
               ))}
             </div>
