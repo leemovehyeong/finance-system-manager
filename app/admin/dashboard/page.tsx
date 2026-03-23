@@ -40,22 +40,62 @@ export default function AdminDashboard() {
 
   const fetchAll = async () => {
     try {
-      // 8초 타임아웃 — hang 방지
-      const [statsResult, ticketsResult, employeesResult, stockResult] = await withTimeout(
-        Promise.allSettled([
-          supabase.from('tickets').select('status'),
-          supabase.from('tickets')
-            .select('*, assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
-            .order('created_at', { ascending: false })
-            .limit(5),
-          supabase.from('employees')
-            .select('*')
-            .in('role', ['field', 'admin'])
-            .eq('is_active', true),
-          supabase.from('paper_stock').select('*'),
-        ]),
-        8000
-      );
+      // 1) 먼저 인증 상태 확인
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      console.log('[Dashboard] auth check:', { userId: user?.id, authError: authError?.message });
+
+      if (!user) {
+        setError('인증 세션이 없습니다. 다시 로그인해주세요.');
+        setLoading(false);
+        return;
+      }
+
+      // 2) 가장 간단한 쿼리부터 시도 (진단용)
+      console.log('[Dashboard] starting queries...');
+
+      const t1 = Date.now();
+      const testQuery = await supabase.from('employees').select('id').limit(1);
+      console.log('[Dashboard] test query:', {
+        ms: Date.now() - t1,
+        data: testQuery.data,
+        error: testQuery.error?.message,
+      });
+
+      if (testQuery.error) {
+        setError(`DB 연결 오류: ${testQuery.error.message}`);
+        setLoading(false);
+        return;
+      }
+
+      // 3) 실제 데이터 로드 (개별 에러 추적)
+      const results = await Promise.allSettled([
+        supabase.from('tickets').select('status').then(r => {
+          console.log('[Dashboard] tickets/status:', { data: r.data?.length, error: r.error?.message });
+          return r;
+        }),
+        supabase.from('tickets')
+          .select('*, assigned_to_employee:employees!tickets_assigned_to_fkey(name)')
+          .order('created_at', { ascending: false })
+          .limit(5)
+          .then(r => {
+            console.log('[Dashboard] recent tickets:', { data: r.data?.length, error: r.error?.message });
+            return r;
+          }),
+        supabase.from('employees')
+          .select('*')
+          .in('role', ['field', 'admin'])
+          .eq('is_active', true)
+          .then(r => {
+            console.log('[Dashboard] employees:', { data: r.data?.length, error: r.error?.message });
+            return r;
+          }),
+        supabase.from('paper_stock').select('*').then(r => {
+          console.log('[Dashboard] paper_stock:', { data: r.data?.length, error: r.error?.message });
+          return r;
+        }),
+      ]);
+
+      const [statsResult, ticketsResult, employeesResult, stockResult] = results;
 
       // 상태별 카운트 집계
       if (statsResult.status === 'fulfilled' && statsResult.value.data) {
